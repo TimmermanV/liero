@@ -418,6 +418,8 @@ void blitStone(Common& common, Level& level, bool p1, PalIdx* mem, int x, int y)
 
 void drawDirtEffect(Common& common, Rand& rand, Level& level, int dirtEffect, int x, int y)
 {
+	common.logDrawMapEffect(dirtEffect, x, y);
+
 	assert(dirtEffect >= 0 && dirtEffect < 9);
 	Texture& tex = common.textures[dirtEffect];
 	PalIdx* tFrame = common.largeSprites.spritePtr(tex.sFrame + rand(tex.rFrame));

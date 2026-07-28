@@ -1,6 +1,10 @@
 #ifndef UUID_9E238CFB9F074A3A432E22AE5B8EE5FB
 #define UUID_9E238CFB9F074A3A432E22AE5B8EE5FB
 
+#include <type_traits>
+#include <fstream>
+#include <sstream>
+#include <ios>
 #include "gfx/font.hpp"
 #include "weapon.hpp"
 #include "sobject.hpp"
@@ -146,6 +150,23 @@ struct Common : gvl::shared
 		return fireConeSprites.spritePtr(f + dir*7);
 	}
 
+	void logDrawLargeSprite(uint8_t frame, uint16_t x, uint16_t y);
+	void logDrawSmallSprite(uint8_t frame, uint16_t x, uint16_t y);
+	void logDrawPixel(uint8_t color, uint16_t x, uint16_t y);
+	void logDrawWeaponName(uint8_t idx, uint16_t x, uint16_t y);
+	void logDrawLine(uint8_t color, uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+	void logDrawLaserSight(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+	void logDrawNinjaRope(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+	void logDrawFireCone(uint8_t angle, uint8_t direction, uint8_t value, uint16_t x, uint16_t y);
+	void logDrawWorm(uint8_t frame, uint8_t direction, uint8_t player, uint16_t x, uint16_t y);
+	void logDrawReticle(uint8_t player, uint8_t color, uint16_t x, uint16_t y);
+	void logEndOfMapChanges();
+	void logEndOfFrame();
+
+	void logDrawMapEffect(uint8_t idx, uint16_t x, uint16_t y);
+	void logDrawImageOnMap(uint8_t frame, uint16_t x, uint16_t y);
+	void logDrawPixelOnMap(uint8_t color, uint16_t x, uint16_t y);
+
 	// Computed
 	Texts texts;
 	vector<int> weapOrder;
@@ -172,6 +193,9 @@ struct Common : gvl::shared
 	int32_t C[MaxC];
 	std::string S[MaxS];
 	bool H[MaxH];
+
+	std::ofstream drawLogFile;
+	std::ostringstream drawOnMapLog{std::ios::binary};
 
 #if ENABLE_TRACING
 	void ltrace(char const* category, uint32 object, char const* attribute, uint32 value);

@@ -605,3 +605,124 @@ void Common::ltrace(char const* category, uint32 object, char const* attribute, 
 	}
 }
 #endif
+
+enum class DrawCommand : uint8_t
+{
+	PixelOnMap,	//B
+	MapEffect,	//D
+	ImageOnMap,	//M
+	EndOfMapChanges,
+	LaserSight,	//A
+	FireCone,	//F
+	Line,		//L
+	NinjaRope,	//N
+	SmallSprite,//O
+	Pixel,		//P
+	Reticle,	//R
+	LargeSprite,//S
+	WeaponName,	//T
+	Worm,		//W
+	EndOfFrame,
+};
+
+template<typename argType, std::enable_if_t<std::is_integral_v<argType>, int> = 0>
+static void sWriteDataToStream(std::ostream& stream, argType value)
+{
+	stream.write(reinterpret_cast<const char*>(&value), sizeof(argType));
+}
+
+static void sWriteDataToStream(std::ostream& stream, DrawCommand drawCommand)
+{
+	sWriteDataToStream(stream, std::underlying_type_t<DrawCommand>(drawCommand));
+}
+
+template <typename... argTypes>
+static void sWriteToLog(std::ostream& stream, DrawCommand command, argTypes&&... args)
+{
+	sWriteDataToStream(stream, command);
+	(sWriteDataToStream(stream, std::forward<argTypes>(args)), ...);
+}
+
+void Common::logDrawLargeSprite(uint8_t frame, uint16_t x, uint16_t y)
+{
+	sWriteToLog(drawLogFile, DrawCommand::LargeSprite, frame, x, y);
+}
+
+void Common::logDrawSmallSprite(uint8_t frame, uint16_t x, uint16_t y)
+{
+	sWriteToLog(drawLogFile, DrawCommand::SmallSprite, frame, x, y);
+}
+
+void Common::logDrawPixel(uint8_t color, uint16_t x, uint16_t y)
+{
+	sWriteToLog(drawLogFile, DrawCommand::Pixel, color, x, y);
+}
+
+void Common::logDrawWeaponName(uint8_t idx, uint16_t x, uint16_t y)
+{
+	sWriteToLog(drawLogFile, DrawCommand::WeaponName, idx, x, y);
+}
+
+void Common::logDrawLine(uint8_t color, uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
+{
+	sWriteToLog(drawLogFile, DrawCommand::Line, color, x0, y0, x1, y1);
+}
+
+void Common::logDrawLaserSight(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
+{
+	sWriteToLog(drawLogFile, DrawCommand::LaserSight, x0, y0, x1, y1);
+}
+
+void Common::logDrawNinjaRope(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
+{
+	sWriteToLog(drawLogFile, DrawCommand::NinjaRope, x0, y0, x1, y1);
+}
+
+void Common::logDrawFireCone(uint8_t angle, uint8_t direction, uint8_t value, uint16_t x, uint16_t y)
+{
+	sWriteToLog(drawLogFile, DrawCommand::FireCone, angle, direction, value, x, y);
+}
+
+void Common::logDrawWorm(uint8_t frame, uint8_t direction, uint8_t player, uint16_t x, uint16_t y)
+{
+	sWriteToLog(drawLogFile, DrawCommand::Worm, frame, direction, player, x, y);
+}
+
+void Common::logDrawReticle(uint8_t player, uint8_t color, uint16_t x, uint16_t y)
+{
+	sWriteToLog(drawLogFile, DrawCommand::Reticle, player, color, x, y);
+}
+
+void Common::logEndOfMapChanges()
+{
+	sWriteToLog(drawLogFile, DrawCommand::EndOfMapChanges);
+}
+
+void Common::logEndOfFrame()
+{
+	sWriteToLog(drawLogFile, DrawCommand::EndOfFrame);
+}
+
+void Common::logDrawMapEffect(uint8_t idx, uint16_t x, uint16_t y)
+{
+	if (drawLogFile.is_open())
+		sWriteToLog(drawLogFile, DrawCommand::MapEffect, idx, x, y);
+
+	sWriteToLog(drawOnMapLog, DrawCommand::MapEffect, idx, x, y);
+}
+
+void Common::logDrawImageOnMap(uint8_t frame, uint16_t x, uint16_t y)
+{
+	if (drawLogFile.is_open())
+		sWriteToLog(drawLogFile, DrawCommand::ImageOnMap, frame, x, y);
+	
+	sWriteToLog(drawOnMapLog, DrawCommand::ImageOnMap, frame, x, y);
+}
+
+void Common::logDrawPixelOnMap(uint8_t color, uint16_t x, uint16_t y)
+{
+	if (drawLogFile.is_open())
+		sWriteToLog(drawLogFile, DrawCommand::PixelOnMap, color, x, y);
+	
+	sWriteToLog(drawOnMapLog, DrawCommand::PixelOnMap, color, x, y);
+}

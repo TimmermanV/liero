@@ -5,6 +5,7 @@
 #include "constants.hpp"
 #include "console.hpp"
 #include "filesystem.hpp" // For joinPath
+#include <filesystem>
 #include <cstdlib>
 
 #include <gvl/serialization/context.hpp>
@@ -1257,7 +1258,25 @@ void Worm::fire(Game& game)
 	Common& common = *game.common;
 	WormWeapon& ww = weapons[currentWeapon];
 	Weapon const& w = *ww.type;
-	
+
+	if (!common.drawLogFile.is_open())
+	{
+		char file_name[]{"draw_log_0000.bin"};
+		for (int i = 0; i < 10000; i++)
+		{
+			sprintf(file_name, "draw_log_%04d.bin", i);
+			if (!std::filesystem::exists(file_name))
+				break;
+		}
+		
+		common.drawLogFile.open(file_name, std::ios::out | std::ios::binary);
+		if (common.drawLogFile.is_open())
+		{
+			std::string log = common.drawOnMapLog.str();
+			common.drawLogFile.write(log.data(), log.length());
+		}
+	}
+
 	--ww.ammo;
 	ww.delayLeft = w.delay;
 	

@@ -136,6 +136,8 @@ void NObject::process(Game& game)
 		{
 			if(t.startFrame > 0 && t.drawOnMap)
 			{
+				common.logDrawImageOnMap(t.startFrame + curFrame, ipos.x - 3, ipos.y - 3);
+
 				blitImageOnMap(
 					common,
 					game.level,

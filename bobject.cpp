@@ -41,17 +41,23 @@ bool BObject::process(Game& game)
 		if((c >= 1 && c <= 2)
 		|| (c >= 77 && c <= 79)) // TODO: Read from EXE
 		{
-			game.level.setPixel(ipos, 77 + game.rand(3), common);
+			int w = 77 + game.rand(3);
+			game.level.setPixel(ipos, w, common);
+			common.logDrawPixelOnMap(w, ipos.x, ipos.y);
 			return false;
 		}
 		else if(m.anyDirt())
 		{
-			game.level.setPixel(ipos, 82 + game.rand(3), common);
+			int w = 82 + game.rand(3);
+			game.level.setPixel(ipos, w, common);
+			common.logDrawPixelOnMap(w, ipos.x, ipos.y);
 			return false;
 		}
 		else if(m.rock())
 		{
-			game.level.setPixel(ipos, 85 + game.rand(3), common);
+			int w = 85 + game.rand(3);
+			game.level.setPixel(ipos, w, common);
+			common.logDrawPixelOnMap(w, ipos.x, ipos.y);
 			return false;
 		}
 	}

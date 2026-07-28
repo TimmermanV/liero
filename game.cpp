@@ -10,12 +10,6 @@
 #include "ai/predictive_ai.hpp"
 
 
-/*
-void Game::createDefaults()
-{
-
-}*/
-
 Game::Game(
 	gvl::shared_ptr<Common> common,
 	gvl::shared_ptr<Settings> settingsInit,
@@ -155,8 +149,183 @@ void Game::addWorm(Worm* worm)
 	worms.push_back(worm);
 }
 
+int Game::logObjects()
+{
+	Common& common = *(this->common);
+	int active_objects = 0;
+
+	auto sr = sobjects.all();
+	for (SObject* i; (i = sr.next()); )
+	{
+		SObjectType const& t = common.sobjectTypes[i->id];
+		int frame = i->curFrame + t.startFrame;
+
+		common.logDrawLargeSprite(frame, i->x, i->y);
+		active_objects++;
+	}
+
+	auto wr = wobjects.all();
+	for (WObject* i; (i = wr.next()); )
+	{
+		Weapon const& w = *i->type;
+	
+		if(w.startFrame > -1)
+		{
+			int curFrame = i->curFrame;
+			int shotType = w.shotType;
+		
+			if(shotType == 2)
+			{
+				curFrame += 4;
+				curFrame >>= 3;
+				if(curFrame < 0)
+					curFrame = 16;
+				else if(curFrame > 15)
+					curFrame -= 16;
+			}
+			else if(shotType == 3)
+			{
+				if(curFrame > 64)
+					--curFrame;
+				curFrame -= 12;
+				curFrame >>= 3;
+				if(curFrame < 0)
+					curFrame = 0;
+				else if(curFrame > 12)
+					curFrame = 12;
+			}
+		
+			int posX = ftoi(i->pos.x) - 3;
+			int posY = ftoi(i->pos.y) - 3;
+		
+			common.logDrawSmallSprite( w.startFrame + curFrame, posX, posY);
+			active_objects++;
+		}
+		else if(i->curFrame > 0)
+		{
+			common.logDrawPixel(i->curFrame, ftoi(i->pos.x), ftoi(i->pos.y));
+			active_objects++;
+		}
+
+		if(!common.H[HRemExp] && i->type - &common.weapons[0] == 34 && settings->namesOnBonuses) // TODO: Read from EXE
+		{
+			if(i->curFrame == 0)
+			{
+				int nameNum = int(&*i - wobjects.arr) % (int)common.weapons.size(); // TODO: Something nicer maybe
+			
+				std::string const& name = common.weapons[nameNum].name;
+				int width = int(name.size()) * 4;
+				
+				int posX = ftoi(i->pos.x) - width/2;
+				int posY = ftoi(i->pos.y) - 10;
+			
+				common.logDrawWeaponName(nameNum, posX, posY);
+			}
+		}
+	}
+
+	auto nr = nobjects.all();
+	for (NObject* i; (i = nr.next()); )
+	{
+		NObjectType const& t = *i->type;
+	
+		if(t.startFrame > 0)
+		{
+			auto pos = ftoi(i->pos) - gvl::ivec2(3, 3);
+			common.logDrawSmallSprite(t.startFrame + i->curFrame, pos.x, pos.y);
+			active_objects++;		
+		}
+		else if(i->curFrame > 1)
+		{
+			auto pos = ftoi(i->pos);
+			common.logDrawPixel(i->curFrame, pos.x, pos.y);
+			active_objects++;
+		}
+	}
+
+	for(std::size_t i = 0; i < worms.size(); ++i)
+	{
+		Worm const& w = *worms[i];
+
+		if(w.visible)
+		{
+		
+			int tempX = ftoi(w.pos.x) - 7;
+			int tempY = ftoi(w.pos.y) - 5;
+			int angleFrame = w.angleFrame();
+		
+			if(w.weapons[w.currentWeapon].available())
+			{
+				int hotspotX = w.hotspotX;
+				int hotspotY = w.hotspotY;
+			
+				WormWeapon const& ww = w.weapons[w.currentWeapon];
+				Weapon const& weapon = *ww.type;
+			
+				if(weapon.laserSight)
+				{
+					common.logDrawLaserSight(hotspotX, hotspotY, tempX + 7, tempY + 4);
+				}
+			
+				if(ww.type - &common.weapons[0] == LC(LaserWeapon) - 1 && w.pressed(Worm::Fire))
+				{
+					common.logDrawLine(weapon.colorBullets, hotspotX, hotspotY, tempX + 7, tempY + 4);
+				}
+			}
+		
+			if(w.ninjarope.out)
+			{
+				int ninjaropeX = ftoi(w.ninjarope.pos.x);
+				int ninjaropeY = ftoi(w.ninjarope.pos.y);
+				common.logDrawNinjaRope(ninjaropeX, ninjaropeY, tempX + 7, tempY + 4);
+			}
+		
+			if(w.weapons[w.currentWeapon].type->fireCone > 0 && w.fireCone > 0)
+			{
+				int coneX = common.fireConeOffset[w.direction][angleFrame][0] + tempX;
+				int coneY = common.fireConeOffset[w.direction][angleFrame][1] + tempY;
+				common.logDrawFireCone(angleFrame, w.direction, w.fireCone / 2, coneX, coneY);
+			}
+		
+			common.logDrawWorm(w.currentFrame, w.direction, w.index, tempX, tempY);
+		}
+
+		if (w.visible)
+		{
+			auto temp = ftoi(w.pos) - gvl::ivec2(1, 2) + ftoi(cossinTable[ftoi(w.aimingAngle)] * 16);
+			common.logDrawReticle(w.index, w.makeSightGreen ? 44 : 43, temp.x, temp.y);
+
+			if(w.pressed(Worm::Change))
+			{
+				std::string const& name = w.weapons[w.currentWeapon].type->name;
+				int len = int(name.size()) * 4;
+				int textX = ftoi(w.pos.x) - len/2 + 1;
+				int textY = ftoi(w.pos.y) - 10;
+				common.logDrawWeaponName(w.currentWeapon, textX, textY);
+			}
+		}
+	}
+
+	for(Game::BObjectList::iterator i = bobjects.begin(); i != bobjects.end(); ++i)
+	{
+		auto ipos = ftoi(i->pos);
+		common.logDrawPixel(i->color, ipos.x, ipos.y);
+	}
+
+	return active_objects;
+}
+
 void Game::draw(Renderer& renderer, bool isReplay)
 {
+	if (common->drawLogFile.is_open())
+	{
+		common->logEndOfMapChanges();
+		int active_objects = logObjects();
+		common->logEndOfFrame();
+		if (active_objects == 0)
+			common->drawLogFile.close();
+	}
+
 	drawViewports(renderer, isReplay);
 
 	//common->font.drawText(toString(cycles / 70), 10, 10, 7);

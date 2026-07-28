@@ -64,6 +64,7 @@ struct Game
 	void clearWorms();
 	void addWorm(Worm*);
 	void resetWorms();
+	int logObjects();
 	void draw(Renderer& renderer, bool isReplay = false);
 	void startGame();
 	bool isGameOver();
